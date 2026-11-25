@@ -1,0 +1,21 @@
+# macOS & Editor
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/
+
+# Obsidian local workspace state (keep notes & shared config if desired, ignore noisy layout state)
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+
+# Secrets & Local Env (NEVER commit tokens or credentials)
+.env
+.env.*
+*.pem
+*.key
+.credentials*
+
+# Python
+__pycache__/
+*.py[cod]
