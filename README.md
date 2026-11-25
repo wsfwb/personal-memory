@@ -22,13 +22,37 @@
 | [`decisions/`](./decisions/index.md) | 决策档案库（记录关键选择、推理逻辑及到期回看验证结果） |
 | [`inbox/`](./inbox/README.md) | 临时收集箱（随手丢进来的未分类想法，定期由 Agent 归档） |
 | [`templates/`](./templates/) | 标准记录模板，确保长期维护格式统一 |
+| [`skills/personal-memory/`](./skills/personal-memory/SKILL.md) | **全局跨目录 Agent Skill**（支持在其他任意项目目录直接召唤维护本库） |
 | [`scripts/memory_status.py`](./scripts/memory_status.py) | 状态巡检脚本：一键查看待归档事项、到期需验证的决策等 |
+| [`scripts/install_global.py`](./scripts/install_global.py) | **一键全局安装脚本**：注册全局 Skill、Agent 路由与终端快捷命令 |
+
+---
+
+## 跨目录全局联动（在其他项目干活时也能随时记录与辅助决策）
+
+平时你不需要切回本目录，运行一次全局注册脚本（换电脑或移动仓库目录后重跑一次即可）：
+
+```bash
+python3 scripts/install_global.py
+```
+
+它会自动完成：
+1. 将 `personal-memory` 技能软链接到 `~/.codex-one/skills/`、`~/.claude/skills/` 等本地 Agent 全局技能目录；
+2. 在全局 `~/.codex-one/AGENTS.md` 与 `~/.claude/CLAUDE.md` 中注入轻量路径指引；
+3. 在 `~/.zshrc` 中注册环境变量 `$PERSONAL_MEMORY_DIR` 以及两个终端快捷指令：
+   - `pmem`：在任意目录一键巡检记忆库状态与到期需回看的决策；
+   - `pmem-cd`：在任意目录一键跳回记忆库。
+
+**跨目录使用示例（当你在其他业务代码仓库工作时）：**
+> - *“刚刚排查出来的这个并发死锁问题很有代表性，帮我脱敏整理到个人记忆库的学习笔记里。”*
+> - *“今天在这个项目上的推进和卡点帮我记到个人记忆库的今日日志里。”*
+> - *“我在纠结这个模块要不要重构，结合我个人记忆库里的阶段目标和防踩坑原则，帮我做个决策分析并记录下来。”*
 
 ---
 
 ## 日常怎么和本地 Agent 配合使用？
 
-你不需要手动去记忆复杂的模板格式，只需在这个项目目录下启动你的本地 Agent（如 Codex / Claude Code / Cursor 等），直接用自然语言对话即可：
+你不需要手动去记忆复杂的模板格式，无论在本目录还是其他工程目录下启动本地 Agent（如 CodexOne / Claude Code 等），直接用自然语言对话即可：
 
 ### 1. 初次启动 / 更新画像
 > - “帮我完善一下我的个人背景和近期目标，我目前主要在做……”

@@ -42,8 +42,10 @@
 │   ├── index.md              # 决策追踪总表（含待回看验证日期）
 │   └── YYYY-MM-DD-slug.md    # 单次决策详情：背景、约束、备选方案、最终选择、回看复盘
 ├── templates/                # 标准文件模板库
+├── skills/personal-memory/   # 全局跨目录 Agent Skill 定义（SKILL.md）
 └── scripts/
-    └── memory_status.py      # 仓库状态巡检脚本（检查待归档 Inbox、到期未回看的决策等）
+    ├── memory_status.py      # 仓库状态巡检脚本（检查待归档 Inbox、到期未回看的决策等）
+    └── install_global.py     # 全局跨目录安装脚本（注册全局 Skill、全局 AGENTS.md 与快捷命令）
 ```
 
 ---
