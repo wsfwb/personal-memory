@@ -45,6 +45,7 @@
 ├── skills/personal-memory/   # 全局跨目录 Agent Skill 定义（SKILL.md）
 └── scripts/
     ├── memory_status.py      # 仓库状态巡检脚本（检查待归档 Inbox、到期未回看的决策等）
+    ├── sync_memory.py        # 自动敏感词拦截 + Git commit/pull/push 一键同步 GitHub 脚本
     └── install_global.py     # 全局跨目录安装脚本（注册全局 Skill、全局 AGENTS.md 与快捷命令）
 ```
 
@@ -101,12 +102,14 @@
 
 ## 5. Git 维护与同步规范
 
-1. 当完成一次完整的记录、学习整理、复盘或决策更新后，主动检查 `git status` 和 `git diff`。
-2. 使用清晰、语义化的 Commit Message 提交变更，推荐前缀：
+1. 当完成一次完整的记录、学习整理、复盘或决策更新后，直接运行一键同步脚本自动检查敏感凭证、提交并推送到 GitHub：
+   ```bash
+   python3 scripts/sync_memory.py "<前缀>: <简明中文说明>"
+   ```
+2. 推荐 Commit Message 前缀：
    - `log:` 日常记录更新（如 `log: 记录 2026-11-25 日常进展`）
    - `learn:` 新增或更新学习笔记（如 `learn: 整理 Agent 记忆架构笔记`）
    - `review:` 周复盘或事件复盘（如 `review: 完成 2026-W48 周复盘`）
    - `decide:` 新增决策记录或更新决策回看结果（如 `decide: 记录技术方向选择决策`）
    - `profile:` 更新个人目标、背景或原则库（如 `profile: 提炼防过度设计原则`）
    - `chore:` 结构调整、脚本或模板维护
-3. 如果配置了远程 GitHub 仓库且用户希望同步（或处于常规维护结束节点），执行 `git push` 保持云端备份最新；如遇远程有新提交，先 `git pull --rebase` 再推送。

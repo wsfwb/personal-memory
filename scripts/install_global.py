@@ -83,14 +83,25 @@ def main() -> None:
             status = ensure_symlink(SKILL_SRC, target)
             print(f"  - {target}: {status}")
 
-    # 3. 更新全局 Agent 引导说明（轻量指针，不干扰无关任务）
-    agent_block = f"""## Personal Memory & Decision OS（跨目录联动）
+    # 3. 更新全局 Agent 引导说明（自动识别高价值节点沉淀 + 免密同步 GitHub）
+    agent_block = f"""## Personal Memory & Decision OS（跨目录自动沉淀与决策联动）
 
 - 用户的个人学习、复盘与决策支持仓库位于：`{REPO_ROOT}`（也可读取 `~/.config/personal-memory/repo_path` 或 `$PERSONAL_MEMORY_DIR`）。
-- 当你在**任意工作目录**收到用户的以下意图时，请调用 `personal-memory` 技能或直接读取 `{REPO_ROOT}/AGENTS.md` 跨目录维护该仓库（使用 `git -C "{REPO_ROOT}"` 独立提交，不要污染当前工作项目的 Git 状态）：
-  1. 记录日常进展、实战踩坑、读书/技术学习笔记或临时灵感（`inbox`）；
-  2. 进行日复盘、周复盘、专项复盘或提炼个人原则（`profile/principles.md`）；
-  3. 在不确定、纠结犹豫时请求结合个人阶段目标（`profile/goals.md`）、原则与历史决策（`decisions/`）辅助做决定。"""
+- **主动无感沉淀协议（无需等用户每次手动提醒）**：
+  当你在**任意项目目录**协助用户开发、排查问题或讨论方案时，只要本次任务结束时产生了以下**高价值信息**，请在完成主线工作后**自动脱敏增量写入**上述记忆库，并运行同步脚本推送到 GitHub：
+  1. **深度踩坑与根因排查**：解决了非显而易见的后端 / AI Agent Bug、并发/性能问题、配置陷阱 -> 沉淀或更新到 `{REPO_ROOT}/learning/topics/`（同步更新 `learning/index.md`）；
+  2. **架构理解与源码收获**：梳理了核心服务链路、学到了可复用的工程设计模式或 Agent 机制 -> 沉淀到 `{REPO_ROOT}/learning/topics/`；
+  3. **关键方案选型与取舍**：与用户讨论并敲定了重要的技术方案、重构决策或个人优先级选择 -> 记录到 `{REPO_ROOT}/decisions/`（同步更新 `decisions/index.md`）；
+  4. **阶段性实质进展**：完成了一个完整功能模块、重要里程碑或复盘总结 -> 精炼追加到 `{REPO_ROOT}/reviews/daily/YYYY-MM-DD.md`（同步更新 `reviews/index.md`）。
+- **防噪音与脱敏红线（必须遵守）**：
+  - 琐碎拼写修改、简单样式调整、无新认知的常规小改动**不要**记录，拒绝流水账噪音；
+  - **严禁**将公司内部密钥、Token、账号密码、私有内网地址或敏感业务数据写入记忆库（仅提炼通用技术原理、架构设计与个人经验）。
+- **不确定时的决策支持**：
+  当用户表现出犹豫、纠结或询问选型/规划建议时，**必须先读取** `{REPO_ROOT}/profile/`（`context.md`, `goals.md`, `principles.md`）和 `decisions/index.md`，结合用户阶段目标与防踩坑原则给出有明确倾向的分析建议。
+- **自动同步到 GitHub 命令**（独立于当前工作仓库，绝不污染当前工程 Git 状态）：
+  每次更新记忆库文件后，直接执行：
+  `python3 "{REPO_ROOT}/scripts/sync_memory.py" "<type>: <简明中文说明>"`
+  并在回复末尾用一句话简短告知用户已同步沉淀了什么内容。"""
 
     agent_instruction_files = []
     if (HOME / ".codex-one").exists():
@@ -107,10 +118,12 @@ def main() -> None:
     zshrc = HOME / ".zshrc"
     zsh_block = f'''export PERSONAL_MEMORY_DIR="{REPO_ROOT}"
 alias pmem='python3 "{REPO_ROOT}/scripts/memory_status.py"'
+alias pmem-sync='python3 "{REPO_ROOT}/scripts/sync_memory.py"'
 alias pmem-cd='cd "{REPO_ROOT}"' '''
     zsh_act = upsert_marked_block(zshrc, zsh_block, ZSH_MARKER_START, ZSH_MARKER_END)
     print(f"[4/4] 配置终端环境变量与快捷命令 (~/.zshrc): {zsh_act}")
     print("  - 任意终端输入 `pmem` 即可查看记忆库状态与到期决策")
+    print("  - 任意终端输入 `pmem-sync` 即可一键提交并推送到 GitHub")
     print("  - 任意终端输入 `pmem-cd` 即可一键跳转到记忆库目录")
     print("\n全部完成！现在你在任意目录启动本地 Agent 都能直接联动维护个人记忆库了。")
 

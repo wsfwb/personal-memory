@@ -1,8 +1,8 @@
 ---
 name: personal-memory
-description: 跨目录读写维护用户的个人记忆库与决策支持系统（Personal Memory & Decision OS）。当用户在任意工作目录提到“记到个人记忆库/学习库/日志”、“把这次踩坑沉淀下来”、“做日复盘/周复盘/事件复盘”、“提炼个人原则”、或在纠结犹豫时请求“结合我的目标/原则帮我做决定”、“查看待回看的决策”时触发。纯业务代码修改且未涉及个人沉淀或决策辅助时不触发。
+description: 跨目录自动沉淀与维护用户的个人记忆库与决策支持系统（Personal Memory & Decision OS）。在任意工作目录中：(1) 当开发/排查任务产出了高价值踩坑经验、架构理解、技术选型拍板或重要阶段进展时，自动脱敏沉淀并同步到 GitHub；(2) 当用户主动要求记录、做日/周/专项复盘、提炼原则时触发；(3) 当用户纠结犹豫请求辅助做决定时触发。琐碎小改动不触发。
 metadata:
-  short-description: 跨目录维护个人学习、复盘与决策库
+  short-description: 跨目录自动沉淀个人学习、复盘与决策库并同步 GitHub
 ---
 
 # Personal Memory & Decision OS（跨目录技能）
@@ -50,12 +50,11 @@ python3 "$MEMORY_REPO/scripts/memory_status.py"
 
 ## 3. 跨目录 Git 提交与同步
 
-每次修改完记忆库文件后，**不影响用户当前工作目录的 Git 状态**，使用 `git -C "$MEMORY_REPO"` 独立管理记忆库提交：
+每次修改完记忆库文件后，**不影响用户当前工作目录的 Git 状态**，直接调用内置同步脚本完成安全扫描、提交、rebase 拉取与推送到 GitHub：
 
 ```bash
-git -C "$MEMORY_REPO" status
-git -C "$MEMORY_REPO" add .
-git -C "$MEMORY_REPO" commit -m "<type>: <简明中文说明>"
+python3 "$MEMORY_REPO/scripts/sync_memory.py" "<type>: <简明中文说明>"
 ```
 
-- 如远程认证可用且用户期望同步云端，执行 `git -C "$MEMORY_REPO" push`；若推送需要凭证或网络受限，保留本地 commit 并告知用户即可，不要阻塞当前主项目工作。
+- `<type>` 推荐使用：`learn` / `log` / `review` / `decide` / `profile`。
+- 同步完成后，在回复末尾用一行简短提示告知用户已同步至 `personal-memory` GitHub 仓库即可，不要喧宾夺主干扰当前开发任务。

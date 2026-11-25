@@ -24,11 +24,12 @@
 | [`templates/`](./templates/) | 标准记录模板，确保长期维护格式统一 |
 | [`skills/personal-memory/`](./skills/personal-memory/SKILL.md) | **全局跨目录 Agent Skill**（支持在其他任意项目目录直接召唤维护本库） |
 | [`scripts/memory_status.py`](./scripts/memory_status.py) | 状态巡检脚本：一键查看待归档事项、到期需验证的决策等 |
+| [`scripts/sync_memory.py`](./scripts/sync_memory.py) | **自动安全扫描 + 一键同步 GitHub 脚本**（自动拦截敏感 Token 并执行 commit & push） |
 | [`scripts/install_global.py`](./scripts/install_global.py) | **一键全局安装脚本**：注册全局 Skill、Agent 路由与终端快捷命令 |
 
 ---
 
-## 跨目录全局联动（在其他项目干活时也能随时记录与辅助决策）
+## 跨目录无感自动沉淀与 GitHub 同步
 
 平时你不需要切回本目录，运行一次全局注册脚本（换电脑或移动仓库目录后重跑一次即可）：
 
@@ -38,9 +39,10 @@ python3 scripts/install_global.py
 
 它会自动完成：
 1. 将 `personal-memory` 技能软链接到 `~/.codex-one/skills/`、`~/.claude/skills/` 等本地 Agent 全局技能目录；
-2. 在全局 `~/.codex-one/AGENTS.md` 与 `~/.claude/CLAUDE.md` 中注入轻量路径指引；
-3. 在 `~/.zshrc` 中注册环境变量 `$PERSONAL_MEMORY_DIR` 以及两个终端快捷指令：
+2. 在全局 `~/.codex-one/AGENTS.md` 与 `~/.claude/CLAUDE.md` 中启用**高价值节点自动沉淀协议**（当你排查了深度 Bug、梳理了核心架构、拍板了关键方案或完成重要里程碑时，Agent 会自动脱敏记录并调用 `sync_memory.py` 推上 GitHub；日常琐碎改动保持安静不记流水账）；
+3. 在 `~/.zshrc` 中注册环境变量 `$PERSONAL_MEMORY_DIR` 以及三个终端快捷指令：
    - `pmem`：在任意目录一键巡检记忆库状态与到期需回看的决策；
+   - `pmem-sync`：手动触发一键提交并同步到 GitHub；
    - `pmem-cd`：在任意目录一键跳回记忆库。
 
 **跨目录使用示例（当你在其他业务代码仓库工作时）：**
