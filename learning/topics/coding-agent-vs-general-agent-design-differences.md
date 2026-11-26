@@ -50,3 +50,9 @@
 - OpenCode 做隔离反而要手工拼（XDG 目录、`OPENCODE_DISABLE_*`、git init 挡 AGENTS.md、占位 node_modules），"coding agent 配置更省事"不成立。
 - 真正影响集成的是事件粒度：OpenCode 有逐步 token（`step_finish`）和逐次工具调用；Hermes 工具输出截断 5000 字符、token 只在最终 result；OpenClaw `agent exec` 只有最终汇总。
 - 要得出明确结论，需要同模型、同任务集的对照实验，用流水线现有的 lint 和 selftest 判定结果。
+
+## 6. 闭环流水线里换 agent 的影响（判断，未实测）
+
+- 当流水线已经接管上下文准备、验证（lint、selftest）、预算和停止条件时，agent 只负责"读材料、改几个文件、试跑"，换 agent 主要影响稳定性、成本和收敛轮数，不太影响最终上限。
+- 上限由反馈信号决定：没有质量评测时，反馈只能发现报错、没触发、没产出，三项都过后任何 agent 都没有改进方向。
+- 实测对比时，评测未接入前不要比"产物质量"，改比：到全部通过所需轮数、每轮 token 和耗时、失败率、回归；任务用植入了可检测缺陷的样例。
