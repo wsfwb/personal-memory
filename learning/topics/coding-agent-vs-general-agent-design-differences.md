@@ -1,30 +1,44 @@
-# Coding Agent 与通用 Agent 的本质边界（剥离通用框架基建后）
+# Coding Agent 与通用 Agent 的区别（按层比较，基于 2026-11 源码核查）
 
-- **日期**：2026-11-26
-- **领域**：AI Agent 架构 / Coding Agent / 工具接口设计（ACI）
-- **状态**：`to-practice`
+- **日期**：2026-11-26（本版替换同日早先版本，早先版本的多条结论经源码核查不成立）
+- **领域**：AI Agent 架构 / Coding Agent / Harness 设计
+- **状态**：`learning`
+- **样本**：coding agent 取 OpenCode v1.19.6、Codex CLI；通用 agent 取 OpenClaw 2026.11.10、Hermes Agent（main），DeerFlow 2.0 作旁证
 
-## 1. 先剥离误区：哪些只是「框架通用能力」而非本质区别？
+## 1. 核心结论
 
-从底层 Runtime 骨架看，Coding Agent 与通用 Agent 同构（都是 `LLM + Tools + Loop`）。以下能力属于**通用 Agent 框架同样具备的工程基建**，不能算作两者区别：
-- 会话持久化与断点续聊（Session Resumption / `-s`）；
-- JSON 事件流输出、Token 统计与超时控制；
-- 挂载基础的 `read_file` / `write_file` / `bash` 工具，或加载 `SKILL.md`（如 OpenClaw 等现代通用 Agent 同样支持）。
+1. **架构层没有类别差异。** 两者都是"模型 + harness"。按"能否做到"无法区分，任何能力都能通过加工具或改配置获得。
+2. **执行内核已经趋同。** 主流开源实现都有 shell 执行、带容错的文件编辑、SKILL.md 格式的 skill、上下文压缩。OpenClaw 还能把整轮执行交给 Codex app-server，相当于直接把 coding agent 当执行内核。
+3. **区别在运行契约**，即默认配置按哪种用法设计：
 
-## 2. 真正的五大本质分野（为什么不能拿通用 Agent 挂两个文件工具代替 Coding Agent？）
-
-| 本质维度 | 通用 Agent（如 OpenClaw / 企业数字员工） | Coding Agent（如 OpenCode / Codex CLI） |
+| 维度 | Coding agent | 通用 agent |
 | :--- | :--- | :--- |
-| **1. 环境真值（Ground Truth）** | **开放世界软反馈**：写总结、发通知、调业务接口没有“编译器判对错”，重心在规划与答复 | **形式化硬真值**：解释器、LSP 语法树、退出码提供绝对客观负反馈，重心在高频 `Edit -> Run -> Fix` 闭环 |
-| **2. 副作用与可逆性假设** | **外部动作默认不可逆**（发消息、改库、调外部 SaaS），策略偏谨慎确认与权限拦截 | **本地工作区天然可逆**（Git Diff / 沙箱重跑），策略鼓励大胆造数据实跑试错 |
-| **3. 工具层的领域厚重度（IDE Harness）** | **薄协议转发层**：把模型 JSON 参数透传给 REST API / MCP / 简单脚本即可 | **把半个 IDE 塞进工具层**：内置 **Read-before-Edit 防幻觉锁**、**多级模糊缩进匹配（Fuzzy Patch）**、**LSP 实时语法报错回传** |
-| **4. 记忆与上下文保真策略** | **重跨会话语义记忆与向量 RAG**：自然语言丢几个词不影响大意，广泛用 Summary 和 Embedding | **排斥模糊摘要与传统向量切块**：代码差一个字符即挂，检索靠精确符号/正则（`ripgrep`/AST），压缩靠清理同一文件的**过期读取（Stale Reads）** |
-| **5. 与模型后训练轨迹耦合** | 对齐通用 Instruct 与常规 Function Calling 分布 | 工具签名与报错格式直接命中现代大模型 RL 刷过的 **SWE 轨迹分布**，能激活深层自主 Debug 行为 |
+| 触发 | 开发者或流水线按任务调用（TUI、`run --format json`、`exec --json`） | 常驻网关，由消息渠道、定时任务、webhook 触发 |
+| 工作单元 | 一个任务一个会话 | 服务某个人或团队的长期会话流 |
+| 工作区语义 | 用户的仓库，是被修改的对象 | agent 自己的家目录，存放人格、用户画像、记忆 |
+| 状态 | 工作区文件和 git | 记忆和会话库（embedding、FTS 检索） |
+| 完成语义 | 工程验证（lint、typecheck、测试） | 结果送达渠道 |
+| 信任边界 | 工作区沙箱加命令审批 | 请求人身份加渠道策略 |
 
-## 3. 架构设计中的关键陷阱：「测试环境 Coding Agent 过强掩盖缺陷」
+4. 这些差异的共同来源是**服务对象和工作单元**。它们都是默认值，可以配置，两类产品也在互相吸收（OpenCode 可由 GitHub 评论和定时任务触发，Codex 桌面版有定时任务和记忆）。
 
-当使用 Coding Agent 同时担任**开发者（Developer）**和**测试执行者（Runner）**时，存在严重的**宿主能力错位风险**：
-- **原因**：如果目标产物（如 Skill 或插件）最终运行在能力受限的**线上通用 Agent** 中，而离线自测却用能力极强的 **Coding Agent** 去跑——当产物脚本存在小 Bug 或指令模糊时，Coding Agent 会凭借强大的本地工具（`grep`/`edit`/现场写临时脚本）“自救”绕过问题并产出正确结果，造成自测假阳性（False Positive）；上线后通用 Agent 没有自救能力就会直接失败。
-- **工程解法**：
-  1. **权限与工具集降级对齐**：在测试 Runner 模式中显式裁剪掉线上宿主不存在的高级编码工具（如禁止 `edit`/`write` 源码目录），并注入与线上一致的 System Prompt。
-  2. **事件流监控“自救信号”**：在解析测试轨迹事件流时，若发现测试 Agent 读取了工具源码排查报错、或自行编写临时脚本绕过了标准入口，即便最终结果正确，也应判定为健壮性缺陷反馈给下一轮修复。
+## 2. 经核查不成立的说法（避免再犯）
+
+- "通用 agent 的编辑工具简陋"：Hermes `tools/fuzzy_match.py` 的 9 级策略与 OpenCode `edit.ts` 的 9 个匹配器有 8 种同名；Hermes 还有语法检查、LSP 诊断，覆写前要求完整读过文件。
+- "coding agent 强制先读后改"：取决于实现。OpenCode 1.19.6 只在工具描述里要求，代码没有检查。
+- "通用 agent 遇错就停下问人"：OpenClaw 系统提示词的 Execution Bias 要求持续到完成或受阻，交付前验证。
+- "只有 coding agent 贴合模型后训练的工具格式"：OpenClaw 同样提供 apply_patch，并按模型家族注入提示词。
+- "测试时关掉 coding agent 的 edit/write 就能防止它绕过被测脚本"：bash 仍然能写文件；如果线上宿主也有这些工具，关掉反而造成假阴性。测试环境应与线上宿主的工具、提示词、模型对齐。
+
+## 3. 模型与 harness 的适配
+
+- OpenAI Codex 提示指南：模型按 apply_patch 格式训练，工具名、参数、输出越贴近训练分布效果越好。
+- DeepSeek-V4.1-Flash 模型卡：同一模型在 8 个 coding harness 上，DeepSWE 从 65.5（OpenCode）到 74.2（只有 bash 的 mini-SWE），Terminal-Bench 2.1 从 84.1 到 90.6。
+- SWE-agent（2024，GPT-4 Turbo）：专门设计的 ACI 比只用 shell 多解决 10.7 个百分点，编辑时做语法检查贡献 3.0 个百分点。
+- 结论：适配是"模型 + harness"组合的属性，工具最多的 harness 不一定最好，需要按组合实测。
+
+## 4. 方法论收获
+
+- 做技术对比先分层（模型 / 执行内核 / 运行契约 / 产品外层），再逐层比较；把框架通用能力当成类别区别是常见错误。
+- 用"能否做到"区分同构系统，必然被反例推翻；应比较默认值和设计重心。
+- 每条结论回到源码或官方文档核对，并记录版本或 commit；开源 agent 迭代很快，二手印象容易过时。
