@@ -1,25 +1,25 @@
-# Coding Agent 与通用 Agent 的核心架构差异与应用场景边界
+# Coding Agent 与通用 Agent 的本质边界（剥离通用框架基建后）
 
 - **日期**：2026-11-26
 - **领域**：AI Agent 架构 / Coding Agent / 工具接口设计（ACI）
 - **状态**：`to-practice`
 
-## 1. 本质抽象差异：会话流驱动 vs. 工作区状态闭环驱动
+## 1. 先剥离误区：哪些只是「框架通用能力」而非本质区别？
 
-| 维度 | 通用 Agent（General Agent） | Coding Agent（软件工程 Agent） |
+从底层 Runtime 骨架看，Coding Agent 与通用 Agent 同构（都是 `LLM + Tools + Loop`）。以下能力属于**通用 Agent 框架同样具备的工程基建**，不能算作两者区别：
+- 会话持久化与断点续聊（Session Resumption / `-s`）；
+- JSON 事件流输出、Token 统计与超时控制；
+- 挂载基础的 `read_file` / `write_file` / `bash` 工具，或加载 `SKILL.md`（如 OpenClaw 等现代通用 Agent 同样支持）。
+
+## 2. 真正的五大本质分野（为什么不能拿通用 Agent 挂两个文件工具代替 Coding Agent？）
+
+| 本质维度 | 通用 Agent（如 OpenClaw / 企业数字员工） | Coding Agent（如 OpenCode / Codex CLI） |
 | :--- | :--- | :--- |
-| **核心任务模型** | `User Query -> API/MCP/RAG -> Final Response` | `Explore (Read/Grep) -> Surgical Edit (Patch) -> Verify (Bash/Test) -> Iterate` |
-| **状态持久化中心** | 对话上下文（Message History）与外部数据库/记忆检索 | 本地文件系统（File Tree）、Git 工作区与进程状态 |
-| **文件修改原语（ACI）** | 粗粒度 `write_file`（整文件覆盖）或外部 API 调用 | 专用 **ACI（Agent-Computer Interface）**：带行号分页 `read`、唯一块匹配 `edit` / `apply_patch`、`glob`、`ripgrep` |
-| **执行与验证心智** | 偏单向交付（工具返回成功即倾向于回复用户） | 内建测试驱动本能（关注 `stdout`/`stderr`、`exit_code`、语法检查，不跑通不轻言结束） |
-| **上下文工程重心** | 摘要记忆、实体抽取、RAG 向量召回 | 严格保持前缀稳定以最大化 **Prompt Caching 命中率**、长工具输出折叠截断、超窗 Compaction |
-| **无头自动化编排** | 多为同步 HTTP 接口或对话 UI | 原生支持 CLI 无头运行（`--format json` 事件流）、按 Session ID 断点接续修复（`-s`）、环境变量级沙箱隔离 |
-
-## 2. 为什么涉及「配置 + 脚本 + 规范文档」的迭代必须用 Coding Agent？
-
-1. **防止整文件重写的退化灾难**：通用 Agent 全量重写几百行文档或脚本时，极易漏删既有边界条件、破坏格式或偷懒省略代码；Coding Agent 的 `edit/patch` 工具从机制上强制模型做**最小增量修改（Minimal Diff）**。
-2. **沙箱实跑的负反馈闭环**：处理文件编码、CLI 参数解析、边界脏数据等问题时，只有真正在临时目录造数据跑一遍脚本、看到非零退出码和 Traceback，模型才能精准修正。
-3. **长轨迹下的高性价比缓存复用**：几十步工具调用虽然累计输入 Token 看似高达数十万，但只要保持历史消息前缀不变，90% 以上都能命中 KV Cache，实际推理成本极低。
+| **1. 环境真值（Ground Truth）** | **开放世界软反馈**：写总结、发通知、调业务接口没有“编译器判对错”，重心在规划与答复 | **形式化硬真值**：解释器、LSP 语法树、退出码提供绝对客观负反馈，重心在高频 `Edit -> Run -> Fix` 闭环 |
+| **2. 副作用与可逆性假设** | **外部动作默认不可逆**（发消息、改库、调外部 SaaS），策略偏谨慎确认与权限拦截 | **本地工作区天然可逆**（Git Diff / 沙箱重跑），策略鼓励大胆造数据实跑试错 |
+| **3. 工具层的领域厚重度（IDE Harness）** | **薄协议转发层**：把模型 JSON 参数透传给 REST API / MCP / 简单脚本即可 | **把半个 IDE 塞进工具层**：内置 **Read-before-Edit 防幻觉锁**、**多级模糊缩进匹配（Fuzzy Patch）**、**LSP 实时语法报错回传** |
+| **4. 记忆与上下文保真策略** | **重跨会话语义记忆与向量 RAG**：自然语言丢几个词不影响大意，广泛用 Summary 和 Embedding | **排斥模糊摘要与传统向量切块**：代码差一个字符即挂，检索靠精确符号/正则（`ripgrep`/AST），压缩靠清理同一文件的**过期读取（Stale Reads）** |
+| **5. 与模型后训练轨迹耦合** | 对齐通用 Instruct 与常规 Function Calling 分布 | 工具签名与报错格式直接命中现代大模型 RL 刷过的 **SWE 轨迹分布**，能激活深层自主 Debug 行为 |
 
 ## 3. 架构设计中的关键陷阱：「测试环境 Coding Agent 过强掩盖缺陷」
 
