@@ -42,3 +42,11 @@
 - 做技术对比先分层（模型 / 执行内核 / 运行契约 / 产品外层），再逐层比较；把框架通用能力当成类别区别是常见错误。
 - 用"能否做到"区分同构系统，必然被反例推翻；应比较默认值和设计重心。
 - 每条结论回到源码或官方文档核对，并记录版本或 commit；开源 agent 迭代很快，二手印象容易过时。
+
+## 5. 用于 skill 自动开发流水线时（补充）
+
+- 没有对比证据表明 coding agent 在 skill 开发上效果更好；跨 harness 的公开数据只比较了 coding agent 之间。
+- 通用 agent 也提供面向 CI 的单次无头模式：OpenClaw `openclaw agent exec`（临时状态目录、`--isolated`、`--json` 最终汇总），Hermes `hermes chat --oneshot --format stream-json`（逐次工具调用事件，`--safe-mode` 关闭个人配置、记忆、插件、MCP）。
+- OpenCode 做隔离反而要手工拼（XDG 目录、`OPENCODE_DISABLE_*`、git init 挡 AGENTS.md、占位 node_modules），"coding agent 配置更省事"不成立。
+- 真正影响集成的是事件粒度：OpenCode 有逐步 token（`step_finish`）和逐次工具调用；Hermes 工具输出截断 5000 字符、token 只在最终 result；OpenClaw `agent exec` 只有最终汇总。
+- 要得出明确结论，需要同模型、同任务集的对照实验，用流水线现有的 lint 和 selftest 判定结果。
