@@ -18,7 +18,7 @@
 
 | 页面 | 领域 | 状态 | 一句话 | 更新 |
 | :--- | :--- | :--- | :--- | :--- |
-| [Skill 自进化闭环架构](./learning/topics/skill-self-evolution-loop-architecture.md) | AI Agent / Skill Loop | `learning` | 确定性步骤全归编排代码，Coding Agent 只负责 Develop/Execute 的 7 步自动迭代架构；无头隔离避坑 | 2026-11-25 |
+| [Skill 自进化闭环架构](./learning/topics/skill-self-evolution-loop-architecture.md) | AI Agent / Skill Loop | `learning` | 确定性步骤全归编排代码，Coding Agent 只负责 Develop/Execute 的 7 步自动迭代架构；无头隔离避坑；模型侧三个上限（窗口 / 输出含思考 / 超时）按后端能力和 skill 体积配 | 2026-11-27 |
 | [Coding Agent 与通用 Agent 的区别](./learning/topics/coding-agent-vs-general-agent-design-differences.md) | AI Agent 架构 | `learning` | 源码核查 OpenCode/Codex/OpenClaw/Hermes：执行内核趋同，差别在运行契约（触发、工作单元、工作区、状态、完成语义、信任边界） | 2026-11-26 |
 | [Skill Loop 只换 develop agent 的实测](./learning/topics/skill-loop-develop-agent-benchmark.md) | AI Agent / Skill Loop | `learning` | 同模型下 agent 差别在效率与稳定性而非改动方向；评测噪声约 8 分，比较前先测噪声；换判官会改变排序 | 2026-11-27 |
 | [学术 Rebuttal 审校防反驳清单](./learning/topics/academic-rebuttal-audit.md) | 研究方法 | `to-practice` | 绝不编造超出原文 Prompt/公式的事后动机；Prompt/Schema 口径对齐、原论文指标核验、跨审稿人逻辑自洽 | 2026-11-26 |

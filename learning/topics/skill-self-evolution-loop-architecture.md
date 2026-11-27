@@ -36,6 +36,13 @@
 - **离线/受限网络依赖陷阱**：
   - 确保 `ripgrep (rg)` 预置在 `PATH` 中，避免 CLI 启动时尝试联网下载导致超时卡死。
   - 留意 CLI 后台静默拉取插件依赖（如 `npm install` 导致单次运行膨胀数十 MB），必要时通过预置目录或配置跳过。
+- **模型侧三个上限要按"后端实际能力 + skill 体积"配，默认值会在大 skill 上连环失败**（2026-11-27 本机实跑：同一轮 develop 三次各撞一个）：
+  - 上下文窗口：告诉 agent 的窗口要 ≥ 网关真实能收的量。配小了 agent 临近窗口就压缩会话，OpenCode 把摘要放在 assistant 角色，Opus 5.5 不认、停下不写结果文件（评审 agent 读大产物时最先撞到）。
+  - 单次输出上限：思考（reasoning）token 也算输出。配 16384 时模型想得多的一步以 `finish_reason=length` 被截断，整步作废；按模型允许的上限给（如 64000）。
+  - 单次调用超时：默认 40 分钟只够小 skill。600 KB、3000 行脚本的 skill，OpenCode 一轮 develop 实测约 3.5 小时、150 次调用；超时被杀后没有中途断点，重跑从头读。超时要按 skill 体积定，并且**在开跑前**定好，跑一半改配置救不了当前进程。
+  - 这三项都做成配置项（框架默认 + 本机覆盖文件），不要写死在生成 agent 配置的代码里。
+- **网关兼容性先用 curl 验流式再接 agent**：本机 OneAPI 桥在 chat/completions 流末尾追加一个非标准 `response.completed` 事件，非流式请求完全正常，agent 的严格校验（AI SDK）却直接报 Type validation failed。对策是中间加一层过滤代理；排查顺序是「非流式 curl → 流式 curl 看最后几帧 → 再看 agent」，能省掉在 agent 日志里猜的时间。
+- **预检要覆盖真实配置**：`setup` 只检查接口能连、runner 能启动，上面这些上限问题要到 develop/evaluate 真跑才暴露；验证新环境时先用小 skill（如 echo-file）把 7 步跑通，再上大 skill，否则一次失败就是 40 分钟到 3 小时。
 
 ## 4. 关键待探索问题（下一步切入点）
 
