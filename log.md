@@ -11,3 +11,4 @@
 - 2026-11-27 | ingest | skill 自进化框架网页层 | + decisions/skill-autodev-web-thin-shell, raw daily/2026-11-27
 - 2026-11-27 | restructure | 讨论“记忆会不会越积越多” | 改用 LLM Wiki 模式：+ index.md（合并 learning/decisions/reviews 三个子索引）, + log.md, ~ AGENTS.md, ~ scripts/memory_status.py（升级为 lint）, + decisions/llm-wiki-memory-model
 - 2026-11-27 | ingest | 本机跑 skill loop 整条链路（网页建任务，sensitivity-analysis v34） | ~ topics/skill-self-evolution-loop-architecture（第 3 节补模型侧三个上限、网关流式非标准事件、预检盲区）, raw daily/2026-11-27
+- 2026-11-28 | ingest | skill loop 整条链路本机跑通（基线 73.66 → r001 83.34），develop 上游中断续会话机制 | ~ topics/skill-self-evolution-loop-architecture（第 3 节补"上游中断续会话"）, + raw daily/2026-11-28

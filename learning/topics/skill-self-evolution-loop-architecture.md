@@ -41,6 +41,7 @@
   - 单次输出上限：思考（reasoning）token 也算输出。配 16384 时模型想得多的一步以 `finish_reason=length` 被截断，整步作废；按模型允许的上限给（如 64000）。
   - 单次调用超时：默认 40 分钟只够小 skill。600 KB、3000 行脚本的 skill，OpenCode 一轮 develop 实测约 3.5 小时、150 次调用；超时被杀后没有中途断点，重跑从头读。超时要按 skill 体积定，并且**在开跑前**定好，跑一半改配置救不了当前进程。
   - 这三项都做成配置项（框架默认 + 本机覆盖文件），不要写死在生成 agent 配置的代码里。
+- **上游中断时续会话，不要整步重跑**：大请求（20–30 万 token）下网关偶发 `api_error` / 流断开，OpenCode 遇到直接退出不重试；一轮 develop 要 3 小时，整步重跑等于白扔两小时。对策：agent 调用层识别瞬时错误（api_error、流断开、5xx，排除 Session not found），用会话 id 续接原会话并给一句"上游中断了，接着做、不要重读"，上限 2 次；实测续上后模型直接从第 12 个 edit 往下做。前提是 harness 的会话落盘可续（OpenCode `-s`），不可续的 agent 只能靠缩短单步或分阶段落盘。
 - **网关兼容性先用 curl 验流式再接 agent**：本机 OneAPI 桥在 chat/completions 流末尾追加一个非标准 `response.completed` 事件，非流式请求完全正常，agent 的严格校验（AI SDK）却直接报 Type validation failed。对策是中间加一层过滤代理；排查顺序是「非流式 curl → 流式 curl 看最后几帧 → 再看 agent」，能省掉在 agent 日志里猜的时间。
 - **预检要覆盖真实配置**：`setup` 只检查接口能连、runner 能启动，上面这些上限问题要到 develop/evaluate 真跑才暴露；验证新环境时先用小 skill（如 echo-file）把 7 步跑通，再上大 skill，否则一次失败就是 40 分钟到 3 小时。
 
