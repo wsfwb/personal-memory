@@ -84,24 +84,22 @@ def main() -> None:
             print(f"  - {target}: {status}")
 
     # 3. 更新全局 Agent 引导说明（自动识别高价值节点沉淀 + 免密同步 GitHub）
-    agent_block = f"""## Personal Memory & Decision OS（跨目录自动沉淀与决策联动）
+    agent_block = f"""## Personal Memory Wiki（跨目录沉淀与决策联动）
 
-- 用户的个人学习、复盘与决策支持仓库位于：`{REPO_ROOT}`（也可读取 `~/.config/personal-memory/repo_path` 或 `$PERSONAL_MEMORY_DIR`）。
-- **主动无感沉淀协议（无需等用户每次手动提醒）**：
-  当你在**任意项目目录**协助用户开发、排查问题或讨论方案时，只要本次任务结束时产生了以下**高价值信息**，请在完成主线工作后**自动脱敏增量写入**上述记忆库，并运行同步脚本推送到 GitHub：
-  1. **深度踩坑与根因排查**：解决了非显而易见的后端 / AI Agent Bug、并发/性能问题、配置陷阱 -> 沉淀或更新到 `{REPO_ROOT}/learning/topics/`（同步更新 `learning/index.md`）；
-  2. **架构理解与源码收获**：梳理了核心服务链路、学到了可复用的工程设计模式或 Agent 机制 -> 沉淀到 `{REPO_ROOT}/learning/topics/`；
-  3. **关键方案选型与取舍**：与用户讨论并敲定了重要的技术方案、重构决策或个人优先级选择 -> 记录到 `{REPO_ROOT}/decisions/`（同步更新 `decisions/index.md`）；
-  4. **阶段性实质进展**：完成了一个完整功能模块、重要里程碑或复盘总结 -> 精炼追加到 `{REPO_ROOT}/reviews/daily/YYYY-MM-DD.md`（同步更新 `reviews/index.md`）。
-- **防噪音与脱敏红线（必须遵守）**：
-  - 琐碎拼写修改、简单样式调整、无新认知的常规小改动**不要**记录，拒绝流水账噪音；
+- 用户的个人记忆库位于：`{REPO_ROOT}`（也可读取 `~/.config/personal-memory/repo_path` 或 `$PERSONAL_MEMORY_DIR`）。它按 LLM Wiki 组织：`reviews/daily/`、`inbox/` 是 raw 层（只追加）；`profile/`、`learning/topics/`、`decisions/` 是 wiki 层（一个东西一页，原地改写）；`index.md` 是唯一入口；`log.md` 记每次操作。完整规则见 `{REPO_ROOT}/AGENTS.md`。
+- **跨目录沉淀协议（任务结束时自动执行，不必等用户提醒）**：
+  在**任意项目目录**协助开发、排查或讨论方案后，若产出了以下高价值信息：非显而易见的根因排查、可复用的架构 / 设计模式理解、与用户敲定的重要选型、一个完整模块或里程碑，则按顺序：
+  1. **先落 raw**：在 `{REPO_ROOT}/reviews/daily/YYYY-MM-DD.md` 追加 1~5 行脱敏事实，链接相关 wiki 页；
+  2. **查 index，更新优先**：读 `{REPO_ROOT}/index.md`，涉及的概念 / 机制 / 决策若已有页，原地更新该页（补机制、改结论、记新坑），不要按日期在页尾追加流水；
+  3. **新建 wiki 页要过门**：它是一个“东西”而非事件、能写出“与用户目标的关联 / 下一步怎么用”、三个月后大概率会搜。三条凑齐才新建，并在回复里先用一句话说明建什么页；凑不齐留在 raw；
+  4. **收尾**：`index.md` 加行或改状态，`log.md` 追加一行。
+- **防噪音与脱敏红线**：
+  - 拼写修正、样式调整、无新认知的常规小改动不记；
   - **严禁**将公司内部密钥、Token、账号密码、私有内网地址或敏感业务数据写入记忆库（仅提炼通用技术原理、架构设计与个人经验）。
 - **不确定时的决策支持**：
-  当用户表现出犹豫、纠结或询问选型/规划建议时，**必须先读取** `{REPO_ROOT}/profile/`（`context.md`, `goals.md`, `principles.md`）和 `decisions/index.md`，结合用户阶段目标与防踩坑原则给出有明确倾向的分析建议。
-- **自动同步到 GitHub 命令**（独立于当前工作仓库，绝不污染当前工程 Git 状态）：
-  每次更新记忆库文件后，直接执行：
-  `python3 "{REPO_ROOT}/scripts/sync_memory.py" "<type>: <简明中文说明>"`
-  并在回复末尾用一句话简短告知用户已同步沉淀了什么内容。"""
+  用户犹豫、纠结或询问选型 / 规划建议时，**必须先读取** `{REPO_ROOT}/profile/`（`context.md`, `goals.md`, `principles.md`）和 `{REPO_ROOT}/index.md` 的决策表，按主线对齐度、单向门 / 双向门、原则校验、机会成本四个维度给出有倾向的建议，并落为 `decisions/` 页。
+- **同步到 GitHub**（独立于当前工作仓库，不污染当前工程 Git 状态）：
+  每次更新记忆库后执行 `python3 "{REPO_ROOT}/scripts/sync_memory.py" "<type>: <简明中文说明>"`，并在回复末尾用一句话告知沉淀了什么。"""
 
     agent_instruction_files = []
     if (HOME / ".codex-one").exists():

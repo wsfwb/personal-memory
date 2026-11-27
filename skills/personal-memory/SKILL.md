@@ -1,13 +1,14 @@
 ---
 name: personal-memory
-description: 跨目录自动沉淀与维护用户的个人记忆库与决策支持系统（Personal Memory & Decision OS）。在任意工作目录中：(1) 当开发/排查任务产出了高价值踩坑经验、架构理解、技术选型拍板或重要阶段进展时，自动脱敏沉淀并同步到 GitHub；(2) 当用户主动要求记录、做日/周/专项复盘、提炼原则时触发；(3) 当用户纠结犹豫请求辅助做决定时触发。琐碎小改动不触发。
+description: 跨目录维护用户的个人记忆库（LLM Wiki 模式：raw 只追加、wiki 页按“东西”组织先更新再新建、index.md 唯一入口、log.md 操作日志）。在任意工作目录中：(1) 当开发/排查任务产出了高价值踩坑经验、架构理解、技术选型拍板或重要阶段进展时，脱敏写入 raw 日志并更新已有 wiki 页，同步到 GitHub；(2) 当用户主动要求记录、做日/周/专项复盘、提炼原则时触发；(3) 当用户纠结犹豫请求辅助做决定时触发。琐碎小改动不触发。
 metadata:
-  short-description: 跨目录自动沉淀个人学习、复盘与决策库并同步 GitHub
+  short-description: 跨目录维护个人 LLM Wiki（学习、复盘、决策）并同步 GitHub
 ---
 
-# Personal Memory & Decision OS（跨目录技能）
+# Personal Memory Wiki（跨目录技能）
 
-本技能允许本地 Agent 在**任意工程目录**工作时，无缝定位、读取并增量维护用户的 `personal-memory` Git 仓库，把日常开发/工作中的实战收获、踩坑复盘与关键抉择沉淀到统一的个人记忆系统中。
+本技能允许本地 Agent 在**任意工程目录**工作时，定位、读取并维护用户的 `personal-memory` Git 仓库。仓库按 LLM Wiki 组织：
+`reviews/daily/`、`inbox/` 是 raw 层（只追加）；`profile/`、`learning/topics/`、`decisions/`、`reviews/weekly|postmortems` 是 wiki 层（一个东西一页，原地改写）；`index.md` 是唯一入口；`log.md` 记每次操作。完整规则在 `"$MEMORY_REPO/AGENTS.md"`。
 
 ## 1. 定位个人记忆库路径（Repo Discovery）
 
@@ -21,32 +22,34 @@ metadata:
 
 ## 2. 跨目录工作流规范
 
-确认 `MEMORY_REPO` 后，首先阅读 `"$MEMORY_REPO/AGENTS.md"`（或按以下精简协议执行），并运行巡检脚本了解现状：
+确认 `MEMORY_REPO` 后，先读 `"$MEMORY_REPO/index.md"`（必要时读 `AGENTS.md`），并运行 lint 了解现状：
 
 ```bash
 python3 "$MEMORY_REPO/scripts/memory_status.py"
 ```
 
-### 场景 A：在其他项目干活时顺手沉淀（学习 / 踩坑 / 日常进展）
-1. **提取当前工程上下文**（脱敏原则）：总结当前项目解决的技术问题、踩坑根因或通用方法论，**严禁**将公司内部密钥、Token、私有连接串或敏感业务数据写入个人记忆库。
-2. **归档位置**：
-   - 通用技术/方法论收获 -> 新增或更新 `"$MEMORY_REPO/learning/topics/<topic>.md"`（参考 `"$MEMORY_REPO/templates/learning-note.md"`），并更新 `"$MEMORY_REPO/learning/index.md"`。可注明来源项目名以便回溯。
-   - 当天推进事项与感悟 -> 创建或追加 `"$MEMORY_REPO/reviews/daily/YYYY-MM-DD.md"`，并确保 `"$MEMORY_REPO/reviews/index.md"` 同步。
-   - 临时灵感 -> 写入 `"$MEMORY_REPO/inbox/"`。
+### 场景 A：在其他项目干活时顺手沉淀（Ingest）
+1. **脱敏**：只提炼通用技术原理、架构设计与个人经验，**严禁**写入公司密钥、Token、内网地址或敏感业务数据。
+2. **先落 raw**：在 `"$MEMORY_REPO/reviews/daily/YYYY-MM-DD.md"` 追加 1~5 行事实，并链接相关 wiki 页。想不清归属的碎片进 `inbox/`。
+3. **查 index，更新优先**：在 `index.md` 和 `learning/topics/` 找已有页，有就原地改（补机制、改结论、记新坑、改 `updated`），不要按日期在页尾追加流水。
+4. **新建 wiki 页要过门**：它是一个“东西”而非事件、能写出“与用户目标的关联 / 下一步怎么用”、三个月后大概率会搜。三条凑齐才新建，并在回复里先用一句话说明建什么页。模板见 `templates/learning-note.md`。
+5. **决策**：用 `templates/decision-record.md` 建 `decisions/YYYY-MM-DD-slug.md`，设 `review_date`。
+6. **收尾**：`index.md` 加行或改状态；`log.md` 追加一行；同步。
 
-### 场景 B：跨目录周期复盘与原则提炼
-1. 读取 `"$MEMORY_REPO/profile/goals.md"`、近期 `reviews/daily/` 及 `decisions/`。
-2. 生成周复盘（`reviews/weekly/YYYY-WXX.md`）或专项事件复盘（`reviews/postmortems/YYYY-MM-DD-slug.md`）。
-3. 提炼 1~2 条可复用的经验教训，经用户确认后写入 `"$MEMORY_REPO/profile/principles.md"`。
+### 场景 B：周期复盘与原则提炼（Lint）
+1. 运行 lint；读 `profile/goals.md`、近 7 天 `reviews/daily/`、`inbox/`、`log.md`。
+2. 把 raw 里还没进 wiki 的东西按场景 A 消化；inbox 清空（升格、合并或删除）；冲突与过期页改正或标 `archived`。
+3. 生成周复盘（`reviews/weekly/YYYY-WXX.md`）或专项复盘（`reviews/postmortems/YYYY-MM-DD-slug.md`），在 `index.md` 综合页加行。
+4. 提炼 1~2 条可复用经验，经用户确认后写入 `profile/principles.md`（上限 30 条，超了先合并淘汰）。
 
-### 场景 C：在其他项目或生活中纠结时辅助决策
-1. **必读基准**：读取 `"$MEMORY_REPO/profile/context.md"`、`goals.md`、`principles.md` 以及 `"$MEMORY_REPO/decisions/index.md"`。
+### 场景 C：纠结时辅助决策（Query）
+1. **必读基准**：读取 `"$MEMORY_REPO/profile/context.md"`、`goals.md`、`principles.md` 以及 `"$MEMORY_REPO/index.md"` 的决策表（看历史上有没有类似决策与结果）。
 2. **结构化把关**：
    - 检查与阶段主线目标的对齐度；
    - 区分「双向门（低成本可逆 -> 快速试错）」与「单向门（高代价不可逆 -> 严控下行风险）」；
    - 对照 `principles.md` 指出潜在盲区（如高估业余精力、过度设计、逃避核心难点）；
    - 给出有明确倾向性的建议。
-3. **决策留痕**：使用 `"$MEMORY_REPO/templates/decision-record.md"` 写入 `"$MEMORY_REPO/decisions/YYYY-MM-DD-slug.md"`，设定 `review_date`，并更新 `"$MEMORY_REPO/decisions/index.md"`。
+3. **决策留痕**：使用 `"$MEMORY_REPO/templates/decision-record.md"` 写入 `"$MEMORY_REPO/decisions/YYYY-MM-DD-slug.md"`，设定 `review_date`，更新 `index.md` 并在 `log.md` 追加一行。
 
 ## 3. 跨目录 Git 提交与同步
 

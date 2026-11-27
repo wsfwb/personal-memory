@@ -1,6 +1,7 @@
 # Personal Memory & Decision OS
 
-这是一个由 **Git + Markdown + 本地 AI Agent** 共同维护的「个人第二大脑、复盘系统与决策支持库」。
+这是一个由 **Git + Markdown + 本地 AI Agent** 共同维护的「个人第二大脑、复盘系统与决策支持库」，按 **LLM Wiki** 模式组织：
+raw 层只追加地记录发生了什么，wiki 层由 Agent 编译成按“东西”组织的页面并原地更新，`index.md` 是唯一入口，`log.md` 记每次操作，`memory_status.py` 做 lint 清理孤儿页和过期页。知识编译一次、反复读取，页面数量随概念增长而不是随天数增长。
 
 它的核心目的不是囤积资料，而是建立一个**持续进化的人机协同闭环**：
 1. **平时学习与做事** -> 让本地 Agent 随手记录、结构化归档，并关联实际应用。
@@ -14,16 +15,19 @@
 | 目录 / 文件 | 作用说明 |
 | :--- | :--- |
 | [`AGENTS.md`](./AGENTS.md) | **本地 Agent 的工作协议**（自动指导 Agent 如何读写和维护本仓库） |
+| [`index.md`](./index.md) | **唯一入口**：所有 wiki 页的目录，一行一页（一句话 + 状态） |
+| [`log.md`](./log.md) | 只追加的操作日志：何时因何事改了哪些页 |
 | [`profile/context.md`](./profile/context.md) | 个人背景、技能栈、现实约束（精力/时间/资源） |
 | [`profile/goals.md`](./profile/goals.md) | 当前阶段的核心目标与「不做清单」 |
-| [`profile/principles.md`](./profile/principles.md) | 个人原则库与防踩坑清单（越用越懂你的核心资产） |
-| [`learning/`](./learning/index.md) | 学习笔记与知识地图（追踪从“了解”到“内化实践”的闭环） |
-| [`reviews/`](./reviews/index.md) | 日常日志（`daily/`）、周复盘（`weekly/`）与专项复盘（`postmortems/`） |
-| [`decisions/`](./decisions/index.md) | 决策档案库（记录关键选择、推理逻辑及到期回看验证结果） |
-| [`inbox/`](./inbox/README.md) | 临时收集箱（随手丢进来的未分类想法，定期由 Agent 归档） |
+| [`profile/principles.md`](./profile/principles.md) | 个人原则库与防踩坑清单（上限 30 条，超了先合并淘汰） |
+| `learning/topics/` | wiki 概念页：一个概念 / 机制 / 方法一页，先更新再新建 |
+| `decisions/` | wiki 决策页：一个决策一页（ADR），到期回看写回结果 |
+| `reviews/daily/` | raw：日常日志，只追加不改写，不入目录 |
+| `reviews/weekly/`、`reviews/postmortems/` | wiki 综合页：周复盘与专项复盘，产出回流到原则与概念页 |
+| [`inbox/`](./inbox/README.md) | raw：未消化碎片，周复盘时升格、合并或删除 |
 | [`templates/`](./templates/) | 标准记录模板，确保长期维护格式统一 |
 | [`skills/personal-memory/`](./skills/personal-memory/SKILL.md) | **全局跨目录 Agent Skill**（支持在其他任意项目目录直接召唤维护本库） |
-| [`scripts/memory_status.py`](./scripts/memory_status.py) | 状态巡检脚本：一键查看待归档事项、到期需验证的决策等 |
+| [`scripts/memory_status.py`](./scripts/memory_status.py) | lint 脚本：到期决策、待消化 inbox、未入 index、坏链接、孤儿页、过期页、原则超限 |
 | [`scripts/sync_memory.py`](./scripts/sync_memory.py) | **自动安全扫描 + 一键同步 GitHub 脚本**（自动拦截敏感 Token 并执行 commit & push） |
 | [`scripts/install_global.py`](./scripts/install_global.py) | **一键全局安装脚本**：注册全局 Skill、Agent 路由与终端快捷命令 |
 
@@ -39,7 +43,7 @@ python3 scripts/install_global.py
 
 它会自动完成：
 1. 将 `personal-memory` 技能软链接到 `~/.codex-one/skills/`、`~/.claude/skills/` 等本地 Agent 全局技能目录；
-2. 在全局 `~/.codex-one/AGENTS.md` 与 `~/.claude/CLAUDE.md` 中启用**高价值节点自动沉淀协议**（当你排查了深度 Bug、梳理了核心架构、拍板了关键方案或完成重要里程碑时，Agent 会自动脱敏记录并调用 `sync_memory.py` 推上 GitHub；日常琐碎改动保持安静不记流水账）；
+2. 在全局 `~/.codex-one/AGENTS.md` 与 `~/.claude/CLAUDE.md` 中启用**跨目录沉淀协议**（当你排查了深度 Bug、梳理了核心架构、拍板了关键方案或完成重要里程碑时，Agent 先写 raw 日志、再更新已有 wiki 页；要新建 wiki 页会先说一句；日常琐碎改动不记）；
 3. 在 `~/.zshrc` 中注册环境变量 `$PERSONAL_MEMORY_DIR` 以及三个终端快捷指令：
    - `pmem`：在任意目录一键巡检记忆库状态与到期需回看的决策；
    - `pmem-sync`：手动触发一键提交并同步到 GitHub；
@@ -74,9 +78,9 @@ python3 scripts/install_global.py
 
 ---
 
-## 快速巡检命令
+## 快速巡检命令（lint）
 
-在终端运行以下命令，可随时查看当前记忆库状态与待回看决策：
+在终端运行以下命令（或任意目录输入 `pmem`），查看到期决策、待消化 inbox、孤儿页、坏链接、过期页与原则条数：
 
 ```bash
 python3 scripts/memory_status.py
